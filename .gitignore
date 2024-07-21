@@ -1,0 +1,7 @@
+.qtc_clangd
+.vscode
+build
+install
+log
+rm_2025.workspace
+rm_2025.workspace.user
