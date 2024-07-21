@@ -71,6 +71,7 @@ private:
     double last_target_y_;
     double current_target_x_;
     double current_target_y_;
+    //20240721 todo:地图选点
     // Map_select *configWindow;
     std::shared_ptr<rclcpp::Node> node_;
     rclcpp::Publisher<robot_msg::msg::RefereeInfoMsg>::SharedPtr referee_info_pub_;
