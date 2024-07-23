@@ -5,22 +5,23 @@ Abstract:xxx
 ## Install & Dependence
 - ubuntu 22.04
 - ros2 humble
-- qt5
+- qt6 (for node_editor and sim_referee,在CMakeLists里修改qt6路径)
 - spdlog
 - fmt 
 
 ## Use
 - for train
   ```
-  python train.py
+  
   ```
 - for test
   ```
-  python test.py
+  
   ```
 
 ## Directory Hierarchy
 ```
+|—— README.md
 |—— robot_msg
 |    |—— CMakeLists.txt
 |    |—— msg
@@ -56,14 +57,11 @@ Abstract:xxx
 ### Tested Platform
 - software
   ```
-  OS: Debian unstable (May 2021), Ubuntu LTS
-  Python: 3.8.5 (anaconda)
-  PyTorch: 1.7.1, 1.8.1
+  
   ```
 - hardware
   ```
-  CPU: Intel Xeon 6226R
-  GPU: Nvidia RTX3090 (24GB)
+  
   ```
 ### Hyper parameters
 ```

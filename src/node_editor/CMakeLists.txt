@@ -1,20 +1,23 @@
 cmake_minimum_required(VERSION 3.8)
-project(sim_referee)
+project(node_editor)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_PREFIX_PATH "/home/lp1/Qt/6.7.2/gcc_64/lib/cmake") # 设置Qt的路径
+
+# find_package(QT NAMES Qt6  REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(robot_msg REQUIRED)
-set(CMAKE_PREFIX_PATH "/home/lp1/Qt/6.7.2/gcc_64/lib/cmake") #设置Qt的路径
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -33,20 +36,21 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-include_directories(include)
-add_executable(sim_referee
-  src/main.cpp
-  src/sim_referee.cpp
-  include/sim_referee.h
-  src/sim_referee.ui
-)
-ament_target_dependencies(sim_referee
-  "rclcpp"
-  "std_msgs"
-  "robot_msg")
+include_directories(inc)
+include_directories(thirdpkg)
+FILE(GLOB_RECURSE SOURCE_FILES inc/*.h src/*.cpp)
 
-target_link_libraries(sim_referee Qt6::Widgets)
-install(TARGETS sim_referee
+add_executable(node_editor
+  main.cpp
+
+  ${SOURCE_FILES}
+)
+ament_target_dependencies(node_editor
+  "rclcpp"
+)
+
+target_link_libraries(node_editor Qt6::Widgets)
+install(TARGETS node_editor
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
