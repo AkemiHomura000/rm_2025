@@ -1,5 +1,5 @@
 ﻿#include <iostream>
-#include <QMetaObject>  
+#include <QMetaObject>
 #include <QMouseEvent>
 #include <QGraphicsItem>
 #include <spdlog/spdlog.h>
@@ -15,67 +15,67 @@
 #include "node_socket.h"
 #include "node_edge.h"
 #include "node_node.h"
-#include"node_graphics_cutLine.h"
+#include "node_graphics_cutLine.h"
 
+#include <ament_index_cpp/get_package_prefix.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
-inline static bool FCVDEBUG=false;
-FlowChartView::FlowChartView(QWidget* parent ) :QGraphicsView(parent)
+inline static bool FCVDEBUG = false;
+FlowChartView::FlowChartView(QWidget *parent) : QGraphicsView(parent)
 {
     spdlog::info("FlowChartView creat success");
-	initUI();
-
+    initUI();
 }
 
 FlowChartView::~FlowChartView()
 {
-    
-    spdlog::info( "FlowChartView delete success");
+
+    spdlog::info("FlowChartView delete success");
 }
 
-//m_cutLine = std::make_unique<QDMGraphicsCutLine>();
+// m_cutLine = std::make_unique<QDMGraphicsCutLine>();
 void FlowChartView::init()
 {
-    //构造cutline
+    // 构造cutline
     m_cutLine = new QDMGraphicsCutLine();
     m_Scene.lock()->getFcScene()->addItem(m_cutLine);
 }
 
 /**
  * @brief 视窗的部分设置
- * @todo 
- * @param 
- * @return 
+ * @todo
+ * @param
+ * @return
  */
 void FlowChartView::initUI()
 {
-    //该函数用于设置渲染选项
+    // 该函数用于设置渲染选项
     setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-    setDragMode(QGraphicsView::RubberBandDrag); 
+    setDragMode(QGraphicsView::RubberBandDrag);
 
-    //进行缩放或平移操作时，变换的中心点将会是鼠标指针所在的位置，而不是视图的中心点
+    // 进行缩放或平移操作时，变换的中心点将会是鼠标指针所在的位置，而不是视图的中心点
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     // enable dropping
     setAcceptDrops(true);
 }
 
-
-void FlowChartView::mousePressEvent(QMouseEvent* event)
+void FlowChartView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::MiddleButton) 
+    if (event->button() == Qt::MiddleButton)
     {
         middleMouseButtonPress(event);
     }
-    else if (event->button() == Qt::LeftButton) 
+    else if (event->button() == Qt::LeftButton)
     {
         leftMouseButtonPress(event);
     }
-    else if (event->button() == Qt::RightButton) 
+    else if (event->button() == Qt::RightButton)
     {
         rightMouseButtonPress(event);
     }
-    else 
+    else
     {
         QGraphicsView::mousePressEvent(event);
     }
@@ -90,69 +90,69 @@ void FlowChartView::mousePressEvent(QMouseEvent* event)
  * @todo 有点没明白为啥要先后模拟按下和释放左键
  * @todo [20240104]如果将releaseEvent和fakeEvent在堆上创建，QT是否会自行管理其生命周期呢？目前保险起见在堆上创建
  * @param param1 参数1的描述
- * @return 
+ * @return
  * setDragMode用户可以使用鼠标拖动视图来进行滚动
  */
-void FlowChartView::middleMouseButtonPress(QMouseEvent* event)
+void FlowChartView::middleMouseButtonPress(QMouseEvent *event)
 {
-    // debug printout  
-    if (FCVDEBUG) { spdlog::debug("MMB DEBUG:"); }  
-    
-    // Create a mouse event with the button released  
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, event->localPos(), event->screenPos(),  
-                             Qt::LeftButton, Qt::NoButton, event->modifiers());  
-    QGraphicsView::mouseReleaseEvent(&releaseEvent);  
-  
-    // Change to scrollhand mode  
-    setDragMode(QGraphicsView::ScrollHandDrag);  
-  
-    // Create a fake mouse event with the button pressed  
-    QMouseEvent fakeEvent(event->type(), event->localPos(), event->screenPos(),  
-                          Qt::LeftButton, event->buttons() | Qt::LeftButton, event->modifiers());  
-    QGraphicsView::mousePressEvent(&fakeEvent);  
+    // debug printout
+    if (FCVDEBUG)
+    {
+        spdlog::debug("MMB DEBUG:");
+    }
 
+    // Create a mouse event with the button released
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, event->localPos(), event->screenPos(),
+                             Qt::LeftButton, Qt::NoButton, event->modifiers());
+    QGraphicsView::mouseReleaseEvent(&releaseEvent);
+
+    // Change to scrollhand mode
+    setDragMode(QGraphicsView::ScrollHandDrag);
+
+    // Create a fake mouse event with the button pressed
+    QMouseEvent fakeEvent(event->type(), event->localPos(), event->screenPos(),
+                          Qt::LeftButton, event->buttons() | Qt::LeftButton, event->modifiers());
+    QGraphicsView::mousePressEvent(&fakeEvent);
 }
 
-void FlowChartView::leftMouseButtonPress(QMouseEvent* event)
+void FlowChartView::leftMouseButtonPress(QMouseEvent *event)
 {
     auto item = getItemClicked(event);
     m_last_scene_mouse_position = mapToScene(event->pos());
 
-    //shift多选 -------------------------------------------------------------------------------------begin
-    //【240113】【class15】 shift按住实现多选 item父类是node / item能转换到edge  /item为空
+    // shift多选 -------------------------------------------------------------------------------------begin
+    // 【240113】【class15】 shift按住实现多选 item父类是node / item能转换到edge  /item为空
     if (item != nullptr)
     {
-        if (dynamic_cast<QDMGraphicsNode*>(item->parentItem()) || dynamic_cast<QDMGraphicsEdge*>(item))
+        if (dynamic_cast<QDMGraphicsNode *>(item->parentItem()) || dynamic_cast<QDMGraphicsEdge *>(item))
         {
             if (event->modifiers() == Qt::ShiftModifier)
             {
                 event->ignore();
                 auto fakeEvent = QMouseEvent(QEvent::MouseButtonPress, event->localPos(), event->screenPos(),
-                    Qt::LeftButton, event->buttons() | Qt::LeftButton,
-                    event->modifiers() | Qt::ControlModifier);
+                                             Qt::LeftButton, event->buttons() | Qt::LeftButton,
+                                             event->modifiers() | Qt::ControlModifier);
                 QGraphicsView::mousePressEvent(&fakeEvent);
                 return;
             }
         }
     }
     else
-    { 
+    {
         if (event->modifiers() == Qt::ShiftModifier)
         {
             event->ignore();
             auto fakeEvent = QMouseEvent(QEvent::MouseButtonPress, event->localPos(), event->screenPos(),
-                Qt::LeftButton, event->buttons() | Qt::LeftButton,
-                event->modifiers() | Qt::ControlModifier);
+                                         Qt::LeftButton, event->buttons() | Qt::LeftButton,
+                                         event->modifiers() | Qt::ControlModifier);
             QGraphicsView::mousePressEvent(&fakeEvent);
             return;
         }
     }
-    //shift多选 -------------------------------------------------------------------------------------end
+    // shift多选 -------------------------------------------------------------------------------------end
 
-
-
-    //socket拖线出现代码----------------------- start
-    if (item != nullptr && dynamic_cast<QDMGraphicsSocket*>(item))
+    // socket拖线出现代码----------------------- start
+    if (item != nullptr && dynamic_cast<QDMGraphicsSocket *>(item))
     {
         if (m_operationMode == OPERATIONMODE::MODE_NOOP)
         {
@@ -170,18 +170,18 @@ void FlowChartView::leftMouseButtonPress(QMouseEvent* event)
             return;
         }
     }
-    //socket拖线出现代码----------------------- end
+    // socket拖线出现代码----------------------- end
 
-    //cutline----------------------------------start
-    if (item==nullptr)
+    // cutline----------------------------------start
+    if (item == nullptr)
     {
-        if(event->modifiers() == Qt::ControlModifier)
+        if (event->modifiers() == Qt::ControlModifier)
         {
-           // 设置操作模式为边缘检测模式
+            // 设置操作模式为边缘检测模式
             m_operationMode = OPERATIONMODE::MODE_EDGE_CUT;
             // 创建一个假的事件，用于模拟鼠标释放事件
             auto fakeEvent = QMouseEvent(QEvent::MouseButtonRelease, event->localPos(), event->screenPos(),
-            Qt::LeftButton, Qt::NoButton,event->modifiers());
+                                         Qt::LeftButton, Qt::NoButton, event->modifiers());
             spdlog::info("control +Lmb Press");
             // 调用鼠标释放事件函数
             QGraphicsView::mouseReleaseEvent(&fakeEvent);
@@ -193,40 +193,43 @@ void FlowChartView::leftMouseButtonPress(QMouseEvent* event)
     //-----------------------------------------end
 
     QGraphicsView::mousePressEvent(event);
-    if (FCVDEBUG) { qDebug() << "LB DEBUG:"; qDebug() << item; }
+    if (FCVDEBUG)
+    {
+        qDebug() << "LB DEBUG:";
+        qDebug() << item;
+    }
 }
 
-void FlowChartView::rightMouseButtonPress(QMouseEvent* event)
+void FlowChartView::rightMouseButtonPress(QMouseEvent *event)
 {
     QGraphicsView::mousePressEvent(event);
-    auto item = getItemClicked(event); //无法自动识别子类类型似乎,只能强转判断
+    auto item = getItemClicked(event); // 无法自动识别子类类型似乎,只能强转判断
 
-    //240122测试用，添加node---------------------------------------
+    // 240122测试用，添加node---------------------------------------
     if (event->modifiers() == Qt::ControlModifier)
     {
         auto node = std::make_shared<Node>(m_Scene, "Node Test");
-        node->initUi(QList<int>{1}, QList<int>{1,2});
+        node->initUi(QList<int>{1}, QList<int>{1, 2});
         node->setPos(mapToScene(event->pos()));
     }
-    //测试用，添加node---------------------------------------
-
+    // 测试用，添加node---------------------------------------
 
     if (FCVDEBUG)
     {
         qDebug() << "RMB DEBUG:" << item;
         if (item != nullptr)
         {
-            if (dynamic_cast<QDMGraphicsEdge*>(item))
+            if (dynamic_cast<QDMGraphicsEdge *>(item))
             {
-                auto gredge = dynamic_cast<QDMGraphicsEdge*>(item);
-                //qDebug() << "edge is:" << gredge->getEdge() << "connect socket is:" << gredge->getEdge()->getStartSocket()
-                //    << "<--->" << gredge->getEdge()->getEndSocket();
+                auto gredge = dynamic_cast<QDMGraphicsEdge *>(item);
+                // qDebug() << "edge is:" << gredge->getEdge() << "connect socket is:" << gredge->getEdge()->getStartSocket()
+                //     << "<--->" << gredge->getEdge()->getEndSocket();
             }
 
-            if (dynamic_cast<QDMGraphicsSocket*>(item))
+            if (dynamic_cast<QDMGraphicsSocket *>(item))
             {
-                //qDebug() << "socket is:" << dynamic_cast<QDMGraphicsSocket*>(item)->getSocket() << "edge is:" <<
-                //    dynamic_cast<QDMGraphicsSocket*>(item)->getSocket()->getEdge();
+                // qDebug() << "socket is:" << dynamic_cast<QDMGraphicsSocket*>(item)->getSocket() << "edge is:" <<
+                //     dynamic_cast<QDMGraphicsSocket*>(item)->getSocket()->getEdge();
             }
             qDebug() << "RB PRESS is:" << item << "pos is:" << item->pos();
         }
@@ -236,19 +239,19 @@ void FlowChartView::rightMouseButtonPress(QMouseEvent* event)
             qDebug() << "nodes :";
             for (int i = 0; i < m_Scene.lock()->getNodes().size(); i++)
             {
-                //qDebug() << m_Scene->getNodes()[i];
+                // qDebug() << m_Scene->getNodes()[i];
             }
             qDebug() << "Edges :";
             for (int i = 0; i < m_Scene.lock()->getEdges().size(); i++)
             {
-                //qDebug() << m_Scene->getEdges()[i];
+                // qDebug() << m_Scene->getEdges()[i];
             }
         }
-        //dynamic_cast<FlowChartScene*>(scene())->getScene()->getNodes() 逐级寻找法，有点麻烦。待定
+        // dynamic_cast<FlowChartScene*>(scene())->getScene()->getNodes() 逐级寻找法，有点麻烦。待定
     }
 }
 
-void FlowChartView::mouseReleaseEvent(QMouseEvent* event)
+void FlowChartView::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::MiddleButton)
     {
@@ -268,32 +271,35 @@ void FlowChartView::mouseReleaseEvent(QMouseEvent* event)
     }
 }
 
-void FlowChartView::middleMouseButtonRelease(QMouseEvent* event)
+void FlowChartView::middleMouseButtonRelease(QMouseEvent *event)
 {
-    if (FCVDEBUG){spdlog::debug("MMB RELEASR DEBUG:");}
+    if (FCVDEBUG)
+    {
+        spdlog::debug("MMB RELEASR DEBUG:");
+    }
     // When Middle mouse button was released
     QMouseEvent fakeEvent(event->type(), event->localPos(), event->screenPos(),
-        Qt::LeftButton, event->buttons() & ~Qt::LeftButton, event->modifiers());
+                          Qt::LeftButton, event->buttons() & ~Qt::LeftButton, event->modifiers());
     QGraphicsView::mouseReleaseEvent(&fakeEvent);
-    //用户可以使用鼠标在视图中创建一个矩形框来选择多个图形项
+    // 用户可以使用鼠标在视图中创建一个矩形框来选择多个图形项
     setDragMode(QGraphicsView::RubberBandDrag);
 }
 
-void FlowChartView::leftMouseButtonRelease(QMouseEvent* event)
+void FlowChartView::leftMouseButtonRelease(QMouseEvent *event)
 {
     auto item = getItemClicked(event);
 
-    //shift 【24240113】多选 -------------------------begin
+    // shift 【24240113】多选 -------------------------begin
     if (item != nullptr)
     {
-        if (dynamic_cast<QDMGraphicsNode*>(item->parentItem()) || dynamic_cast<QDMGraphicsEdge*>(item))
+        if (dynamic_cast<QDMGraphicsNode *>(item->parentItem()) || dynamic_cast<QDMGraphicsEdge *>(item))
         {
             if (event->modifiers() == Qt::ShiftModifier)
             {
                 event->ignore();
                 auto fakeEvent = QMouseEvent(event->type(), event->localPos(), event->screenPos(),
-                    Qt::LeftButton, Qt::NoButton,
-                    event->modifiers() | Qt::ControlModifier);
+                                             Qt::LeftButton, Qt::NoButton,
+                                             event->modifiers() | Qt::ControlModifier);
                 QGraphicsView::mousePressEvent(&fakeEvent);
                 return;
             }
@@ -305,18 +311,17 @@ void FlowChartView::leftMouseButtonRelease(QMouseEvent* event)
         {
             event->ignore();
             auto fakeEvent = QMouseEvent(event->type(), event->localPos(), event->screenPos(),
-                Qt::LeftButton, Qt::NoButton,
-                event->modifiers() | Qt::ControlModifier);
+                                         Qt::LeftButton, Qt::NoButton,
+                                         event->modifiers() | Qt::ControlModifier);
             QGraphicsView::mousePressEvent(&fakeEvent);
             return;
         }
     }
-    //shift多选 --------------------------------------------------------------end
-
+    // shift多选 --------------------------------------------------------------end
 
     if (m_operationMode == OPERATIONMODE::MODE_EDGE_DRAG)
     {
-        //关于释放距离的判断,大于一定距离会绘制新线。
+        // 关于释放距离的判断,大于一定距离会绘制新线。
         if (distanceBetweenClickedAndReleaseIsOff(event))
         {
             auto res = edgeDragEnd(item);
@@ -328,7 +333,7 @@ void FlowChartView::leftMouseButtonRelease(QMouseEvent* event)
     }
 
     if (m_operationMode == OPERATIONMODE::MODE_EDGE_CUT)
-    {      
+    {
         cutIntersectingEdges();
         m_cutLine->clearLinePoint();
         m_cutLine->update();
@@ -338,18 +343,22 @@ void FlowChartView::leftMouseButtonRelease(QMouseEvent* event)
         return;
     }
 
-QGraphicsView::mousePressEvent(event);
-if (FCVDEBUG) { qDebug() << "lB RELEASR DEBUG:"; }
+    QGraphicsView::mousePressEvent(event);
+    if (FCVDEBUG)
+    {
+        qDebug() << "lB RELEASR DEBUG:";
+    }
 }
 
-void FlowChartView::rightMouseButtonRelease(QMouseEvent* event)
+void FlowChartView::rightMouseButtonRelease(QMouseEvent *event)
 {
 
     QGraphicsView::mousePressEvent(event);
-    if (FCVDEBUG) { spdlog::debug("RB RELEASR DEBUG:"); }
+    if (FCVDEBUG)
+    {
+        spdlog::debug("RB RELEASR DEBUG:");
+    }
 }
-
-
 
 /**
  * @brief 滚动事件
@@ -357,7 +366,7 @@ void FlowChartView::rightMouseButtonRelease(QMouseEvent* event)
  * @return
 
  */
-void FlowChartView::wheelEvent(QWheelEvent* event)
+void FlowChartView::wheelEvent(QWheelEvent *event)
 {
     // 如果按下了Ctrl键
     if (event->modifiers() == Qt::ControlModifier)
@@ -409,7 +418,7 @@ void FlowChartView::wheelEvent(QWheelEvent* event)
     }
 }
 
-void FlowChartView::mouseMoveEvent(QMouseEvent* event)
+void FlowChartView::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_operationMode == OPERATIONMODE::MODE_EDGE_DRAG)
     {
@@ -427,19 +436,41 @@ void FlowChartView::mouseMoveEvent(QMouseEvent* event)
     QGraphicsView::mouseMoveEvent(event);
 }
 
-void FlowChartView::keyPressEvent(QKeyEvent* event)
+void FlowChartView::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Delete)
     {
         delteSelected();
     }
-    else if(event->key() == Qt::Key_S && event->modifiers() == Qt::ControlModifier)
+    else if (event->key() == Qt::Key_S && event->modifiers() == Qt::ControlModifier)
     {
-        m_Scene.lock()->saveToFile("graph.json");
+        std::string file="graph.json";
+        std::string package_name = "node_editor"; 
+        try
+        {
+            std::string package_prefix = ament_index_cpp::get_package_prefix(package_name);
+            file=package_prefix+"/../../src/node_editor/config/graph.json";
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+        m_Scene.lock()->saveToFile(file);
     }
     else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier)
     {
-        m_Scene.lock()->loadFromFile("graph.json");
+        std::string file="graph.json";
+        std::string package_name = "node_editor"; 
+        try
+        {
+            std::string package_prefix = ament_index_cpp::get_package_prefix(package_name);
+            file=package_prefix+"/../../src/node_editor/config/graph.json";
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+        m_Scene.lock()->loadFromFile(file);
     }
     else
     {
@@ -447,45 +478,42 @@ void FlowChartView::keyPressEvent(QKeyEvent* event)
     }
 }
 
-void FlowChartView::keyReleaseEvent(QKeyEvent* event)
+void FlowChartView::keyReleaseEvent(QKeyEvent *event)
 {
 }
 
-//dynamic_cast<QDMGraphicsNode*>(item->parentItem())
+// dynamic_cast<QDMGraphicsNode*>(item->parentItem())
 void FlowChartView::delteSelected()
 {
-    for (const auto& item : m_Scene.lock()->getFcScene()->selectedItems())
+    for (const auto &item : m_Scene.lock()->getFcScene()->selectedItems())
     {
-        if(dynamic_cast<QDMGraphicsNode*>(item)) //也删除了其端口所连线
+        if (dynamic_cast<QDMGraphicsNode *>(item)) // 也删除了其端口所连线
         {
-            dynamic_cast<QDMGraphicsNode*>(item)->getNode().lock()->remove();
+            dynamic_cast<QDMGraphicsNode *>(item)->getNode().lock()->remove();
         }
-
     }
-    //不放在上一个循环中是为了避免多次删除
-    for (const auto& item : m_Scene.lock()->getFcScene()->selectedItems())
+    // 不放在上一个循环中是为了避免多次删除
+    for (const auto &item : m_Scene.lock()->getFcScene()->selectedItems())
     {
-        if (item != nullptr && dynamic_cast<QDMGraphicsEdge*>(item))
+        if (item != nullptr && dynamic_cast<QDMGraphicsEdge *>(item))
         {
-            dynamic_cast<QDMGraphicsEdge*>(item)->getEdge().lock()->remove();
+            dynamic_cast<QDMGraphicsEdge *>(item)->getEdge().lock()->remove();
         }
     }
 }
-
 
 /*
  //auto x = itemAt(pos);
- //auto cc1 = dynamic_cast<QDMGraphicsEdge*>(x);  //对象能指向QDMGraphicsEdge么？ 可以，向上转换 
+ //auto cc1 = dynamic_cast<QDMGraphicsEdge*>(x);  //对象能指向QDMGraphicsEdge么？ 可以，向上转换
  //auto x2 = itemAt(pos)->parentItem();
  //auto x = dynamic_cast<QDMGraphicsNode*>(itemAt(pos));
 */
-QGraphicsItem* FlowChartView::getItemClicked(QMouseEvent* event)
+QGraphicsItem *FlowChartView::getItemClicked(QMouseEvent *event)
 {
-    //return the object on which we're clecked/release
+    // return the object on which we're clecked/release
     QPoint pos = event->pos();
-    return  itemAt(pos);
+    return itemAt(pos);
 }
-
 
 /**
  * @brief edgeDragStart
@@ -496,13 +524,13 @@ QGraphicsItem* FlowChartView::getItemClicked(QMouseEvent* event)
    在此处是合理的，每次构造一个内容不同的对象，并且在edgeDragEnd后自动删除
    B 在初始化时候构造一个，在edgeDragStart开始时候改变其初始点似乎更合理
  */
-void FlowChartView::edgeDragStart(QGraphicsItem* item)
+void FlowChartView::edgeDragStart(QGraphicsItem *item)
 {
-    auto edgeDragsocket = dynamic_cast<QDMGraphicsSocket*>(item)->getSocket();
-    m_previousEdge = edgeDragsocket.lock()->getEdge().lock(); //可能返回一个有指向智能指针或空指针智能指针
+    auto edgeDragsocket = dynamic_cast<QDMGraphicsSocket *>(item)->getSocket();
+    m_previousEdge = edgeDragsocket.lock()->getEdge().lock(); // 可能返回一个有指向智能指针或空指针智能指针
     m_last_start_socket = edgeDragsocket;
-    //【attention】 这里由于终点未知，所以出端口指定一个不存在的对象
-    // std::weak_ptr<Socket>() 构造了一个空的 std::weak_ptr 对象，这个对象不持有任何 Socket 类型的对象的所有权或引用
+    // 【attention】 这里由于终点未知，所以出端口指定一个不存在的对象
+    //  std::weak_ptr<Socket>() 构造了一个空的 std::weak_ptr 对象，这个对象不持有任何 Socket 类型的对象的所有权或引用
     m_dragEdge = std::make_shared<Edge>(m_Scene, edgeDragsocket, std::weak_ptr<Socket>(), EDGEPATHTYPE::BezierCurve);
     m_dragEdge->initUi();
 
@@ -510,18 +538,18 @@ void FlowChartView::edgeDragStart(QGraphicsItem* item)
     {
         qDebug() << "view::edgeDdragStart~Start dragging edge";
         qDebug() << "view::edgeDdragStart~assign Start socket to";
-        qDebug() << "view::edgeDdragStart~dragEdge is:" ;
+        qDebug() << "view::edgeDdragStart~dragEdge is:";
     }
 }
 
-bool  FlowChartView::edgeDragEnd(QGraphicsItem* item)
+bool FlowChartView::edgeDragEnd(QGraphicsItem *item)
 {
-    //如果有端口跳过剩余的代码并返回true 
+    // 如果有端口跳过剩余的代码并返回true
     m_operationMode = OPERATIONMODE::MODE_NOOP;
-    if (dynamic_cast<QDMGraphicsSocket*>(item))
+    if (dynamic_cast<QDMGraphicsSocket *>(item))
     {
-        auto socket = dynamic_cast<QDMGraphicsSocket*>(item);
-        //如果起点终点一样，删除正在画的，再次为起始点设置原有edge
+        auto socket = dynamic_cast<QDMGraphicsSocket *>(item);
+        // 如果起点终点一样，删除正在画的，再次为起始点设置原有edge
         if (m_last_start_socket.lock() == socket->getSocket().lock())
         {
             m_dragEdge->remove();
@@ -532,38 +560,51 @@ bool  FlowChartView::edgeDragEnd(QGraphicsItem* item)
             return false;
         }
 
-        if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~previous edge :"; }
+        if (FCVDEBUG)
+        {
+            qDebug() << "View :: edgeDragEnd~previous edge :";
+        }
 
-        //if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~assign End socket:" << socket->getSocket(); }
-        if (!m_previousEdge.expired()) //先去的edge先移除
+        // if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~assign End socket:" << socket->getSocket(); }
+        if (!m_previousEdge.expired()) // 先去的edge先移除
         {
             m_previousEdge.lock()->remove();
-            if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~previous edge removed"; }
+            if (FCVDEBUG)
+            {
+                qDebug() << "View :: edgeDragEnd~previous edge removed";
+            }
         }
         m_dragEdge->setStartSocket(m_last_start_socket);
         m_dragEdge->setEndSocket(socket->getSocket());
         m_dragEdge->getStartSocket().lock()->setConnectedEdge(m_dragEdge);
         m_dragEdge->getEndSocket().lock()->setConnectedEdge(m_dragEdge);
-        if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~assign start & End socket to drag edge"; }
+        if (FCVDEBUG)
+        {
+            qDebug() << "View :: edgeDragEnd~assign start & End socket to drag edge";
+        }
         m_dragEdge->updatePosition();
         return true;
     }
 
-    //【240112】没有就取消这个对象目前存在的一切
-    if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~End draging edge"; }
+    // 【240112】没有就取消这个对象目前存在的一切
+    if (FCVDEBUG)
+    {
+        qDebug() << "View :: edgeDragEnd~End draging edge";
+    }
     m_dragEdge->remove();
-    //m_dragEdge = nullptr;
-    //if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~about to set socket to previous edge" << m_previousEdge; }
+    // m_dragEdge = nullptr;
+    // if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~about to set socket to previous edge" << m_previousEdge; }
     if (!m_previousEdge.expired())
     {
         m_previousEdge.lock()->getStartSocket().lock()->setConnectedEdge(m_previousEdge);
     }
-    if (FCVDEBUG) { qDebug() << "View :: edgeDragEnd~everything done"; }
-
+    if (FCVDEBUG)
+    {
+        qDebug() << "View :: edgeDragEnd~everything done";
+    }
 
     return false;
 }
-
 
 /**
  * @brief 范围
@@ -577,9 +618,9 @@ bool  FlowChartView::edgeDragEnd(QGraphicsItem* item)
 *@todo 还未非常清晰，后续思考整理20231209
  */
 
-bool FlowChartView::distanceBetweenClickedAndReleaseIsOff(QMouseEvent* event)
+bool FlowChartView::distanceBetweenClickedAndReleaseIsOff(QMouseEvent *event)
 {
-    //mapToScene 函数接受一个 QPoint 类型的视口坐标作为参数,并将其转换为 QPointF 类型的场景坐标
+    // mapToScene 函数接受一个 QPoint 类型的视口坐标作为参数,并将其转换为 QPointF 类型的场景坐标
     auto new_lmb_release_scene_pos = mapToScene(event->pos());
     auto dist_scene = new_lmb_release_scene_pos - m_last_scene_mouse_position;
     auto edge_start_threshold_sq = m_edge_start_threshold * m_edge_start_threshold;
@@ -593,12 +634,12 @@ void FlowChartView::setCustomSence(std::weak_ptr<Scene> sence)
 
 void FlowChartView::cutIntersectingEdges()
 {
-    for (int ix = 0; ix < m_cutLine->getlinePoints().size()-1; ix++)
+    for (int ix = 0; ix < m_cutLine->getlinePoints().size() - 1; ix++)
     {
         auto p1 = m_cutLine->getlinePoints()[ix];
         auto p2 = m_cutLine->getlinePoints()[ix + 1];
 
-        for (const auto& edge : m_Scene.lock()->getEdges())
+        for (const auto &edge : m_Scene.lock()->getEdges())
         {
             if (edge->getGrEdge()->intersectsWith(p1, p2))
             {
@@ -606,6 +647,4 @@ void FlowChartView::cutIntersectingEdges()
             }
         }
     }
-
 }
-
