@@ -18,7 +18,7 @@ set(CMAKE_PREFIX_PATH "/home/lp1/Qt/6.7.2/gcc_64/lib/cmake") # 设置Qt的路径
 find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
-
+find_package(yaml-cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 
 # uncomment the following section in order to fill in
@@ -52,7 +52,7 @@ ament_target_dependencies(node_editor
   "ament_index_cpp"
 )
 
-target_link_libraries(node_editor Qt6::Widgets)
+target_link_libraries(node_editor Qt6::Widgets yaml-cpp)
 install(TARGETS node_editor
   DESTINATION lib/${PROJECT_NAME})
 

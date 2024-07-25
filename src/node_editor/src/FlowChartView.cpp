@@ -5,6 +5,11 @@
 #include <spdlog/spdlog.h>
 #include <QApplication>
 
+#include <fstream>
+#include <vector>
+#include "yaml-cpp/yaml.h"
+#include <rapidjson/istreamwrapper.h>
+
 #include "FlowChartView.h"
 #include "FlowChartScene.h"
 
@@ -20,6 +25,132 @@
 #include <ament_index_cpp/get_package_prefix.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+struct TreeNode
+{
+    int id;
+    std::string variable;
+    std::string condition;
+    int left_id;
+    int right_id;
+    std::string action;
+};
+void write_yaml()
+{
+    std::string file_out = "tree.yaml";
+    std::string package_name = "node_editor";
+    try
+    {
+        std::string package_prefix = ament_index_cpp::get_package_prefix(package_name);
+        file_out = package_prefix + "/../../src/node_editor/config/tree.yaml";
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+    std::string file = "graph.json";
+    try
+    {
+        std::string package_prefix = ament_index_cpp::get_package_prefix(package_name);
+        file = package_prefix + "/../../src/node_editor/config/graph.json";
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+    using namespace rapidjson;
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+    std::vector<TreeNode> tree_nodes;
+    // 读取JSON文件
+    std::ifstream ifs(file);
+    IStreamWrapper isw(ifs);
+    // 解析JSON
+    Document doc;
+    doc.ParseStream(isw);
+    // 提取节点数据
+    const Value &nodes = doc["nodes"];
+    for (SizeType i = 0; i < nodes.Size(); i++)
+    {
+        const Value &node = nodes[i];
+        int nodeId = node["id"].GetInt();
+        std::string variable = node["variable"].GetString();
+        std::string condition = node["condition"].GetString();
+        std::string action = node["action"].GetString();
+        TreeNode tree_node;
+        tree_node.id = nodeId;
+        tree_node.left_id = -1;
+        tree_node.right_id = -1;
+        tree_node.variable = variable;
+        tree_node.condition = condition;
+        tree_node.action = action;
+        tree_nodes.push_back(tree_node);
+    }
+    for (int i = 0; i < tree_nodes.size(); i++)
+    {
+        std::cout << "Node " << tree_nodes[i].id << ", Variable: " << tree_nodes[i].variable << ", Condition: " << tree_nodes[i].condition << ", Action: " << tree_nodes[i].action << std::endl;
+    }
+    // 提取边数据
+    const Value &edges = doc["edges"];
+    for (SizeType i = 0; i < edges.Size(); i++)
+    {
+        int startId = edges[i]["strat"].GetInt() - 300000;
+        int endId = edges[i]["end"].GetInt() - 300000;
+        if (startId % 3 == 0)
+        {
+            int i = 0;
+            for (i; i < tree_nodes.size(); i++)
+            {
+                if (tree_nodes[i].id == startId / 3)
+                    break;
+            }
+            tree_nodes[i].left_id = endId / 3 + 1;
+            std::cout << "tree_node" << tree_nodes[i].id << "\tleft_id=" << tree_nodes[i].left_id << std::endl;
+        }
+
+        if (startId % 3 == 2)
+        {
+            int i = 0;
+            for (i; i < tree_nodes.size(); i++)
+            {
+                if (tree_nodes[i].id == (startId + 1) / 3)
+                    break;
+            }
+            tree_nodes[i].right_id = endId / 3 + 1;
+            std::cout << "tree_node" << tree_nodes[i].id << "\tright_id=" << tree_nodes[i].right_id << std::endl;
+        }
+    }
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    YAML::Node decision_tree;
+    for (int i = 0; i < tree_nodes.size(); i++)
+    {
+    }
+    std::vector<YAML::Node> yaml_nodes;
+    for (int i = 0; i < tree_nodes.size(); i++)
+    {
+        std::cout << "Node " << tree_nodes[i].id << ", left_id: " << tree_nodes[i].left_id << ", right_id: " << tree_nodes[i].right_id << std::endl;
+
+        YAML::Node node;
+        node["id"] = tree_nodes[i].id;
+        node["variable"] = tree_nodes[i].variable;
+        node["condition"] = tree_nodes[i].condition;
+        node["left_id"] = tree_nodes[i].left_id;
+        node["right_id"] = tree_nodes[i].right_id;
+        node["action"] = tree_nodes[i].action;
+        yaml_nodes.push_back(node);
+    }
+
+    // Append decision tree nodes to decision_tree_1 key
+    for (const auto &node : yaml_nodes)
+    {
+        decision_tree["decision_tree_1"].push_back(node);
+    }
+
+    // Output the decision tree to a YAML file
+    std::ofstream fout(file_out);
+    fout << decision_tree;
+    fout.close();
+
+    std::cout << "YAML file created successfully.\n";
+}
 inline static bool FCVDEBUG = false;
 FlowChartView::FlowChartView(QWidget *parent) : QGraphicsView(parent)
 {
@@ -444,27 +575,28 @@ void FlowChartView::keyPressEvent(QKeyEvent *event)
     }
     else if (event->key() == Qt::Key_S && event->modifiers() == Qt::ControlModifier)
     {
-        std::string file="graph.json";
-        std::string package_name = "node_editor"; 
+        std::string file = "graph.json";
+        std::string package_name = "node_editor";
         try
         {
             std::string package_prefix = ament_index_cpp::get_package_prefix(package_name);
-            file=package_prefix+"/../../src/node_editor/config/graph.json";
+            file = package_prefix + "/../../src/node_editor/config/graph.json";
         }
         catch (const std::exception &e)
         {
             std::cerr << "Error: " << e.what() << std::endl;
         }
         m_Scene.lock()->saveToFile(file);
+        write_yaml();
     }
     else if (event->key() == Qt::Key_L && event->modifiers() == Qt::ControlModifier)
     {
-        std::string file="graph.json";
-        std::string package_name = "node_editor"; 
+        std::string file = "graph.json";
+        std::string package_name = "node_editor";
         try
         {
             std::string package_prefix = ament_index_cpp::get_package_prefix(package_name);
-            file=package_prefix+"/../../src/node_editor/config/graph.json";
+            file = package_prefix + "/../../src/node_editor/config/graph.json";
         }
         catch (const std::exception &e)
         {
