@@ -1,0 +1,62 @@
+decision_tree_1:
+  - id: 1
+    node_type: condition
+    variable: test1
+    condition: "=="
+    condition_value: 1
+    left_id: 2
+    left_observer_id: 0
+    right_id: 0
+    right_observer_id: 0
+
+  - id: 2
+    node_type: condition
+    variable: test1
+    condition: ">"
+    condition_value: 0
+    left_id: 3
+    left_observer_id: 0
+    right_id: 0
+    right_observer_id: 0
+
+  - id: 3
+    node_type: condition
+    variable: test2
+    condition: "<"
+    condition_value: 11
+    left_id: 4
+    left_observer_id: 0
+    right_id: 0
+    right_observer_id: 0
+
+  - id: 4
+    node_type: condition
+    variable: test2
+    condition: "!="
+    condition_value: 1
+    left_id: 0
+    left_observer_id: 5
+    right_id: 0
+    right_observer_id: 0
+
+  - id: 5
+    node_type: sequence
+    action_list:
+      - 6
+      - 7
+      - 8
+
+  - id: 6
+    node_type: action
+    action: move
+    param: 1,1
+
+  - id: 7
+    node_type: action
+    action: wait
+    param: 5
+
+  - id: 8
+    node_type: action
+    action: move
+    param: 3,3

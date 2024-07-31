@@ -1,0 +1,12 @@
+# Goal
+int32 action_id
+string action_name
+float64[] parameters
+
+---
+# Result
+int32 result
+
+---
+# Feedback
+int32[] states

@@ -1,25 +1,32 @@
 Title
 ===
+
 Abstract:xxx
 
 ## Install & Dependence
+
 - ubuntu 22.04
 - ros2 humble
 - qt6 (for node_editor and sim_referee,在CMakeLists里修改qt6路径)
 - spdlog
-- fmt 
+- fmt
 
 ## Use
+
 - for train
+
   ```
   
   ```
+
 - for test
+
   ```
   
   ```
 
 ## Directory Hierarchy
+
 ```
 |—— README.md
 |—— robot_msg
@@ -53,19 +60,24 @@ Abstract:xxx
 |            |—— node.cpp
 |            |—— node_test.cpp
 ```
+
 ## Code Details
+
 ### Tested Platform
+
 - software
+
   ```
   
   ```
+
 - hardware
+
   ```
   
   ```
+
 ### Hyper parameters
+
 ```
 ```
-
-  
-
